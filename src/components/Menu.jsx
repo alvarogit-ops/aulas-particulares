@@ -13,7 +13,7 @@ export function Menu() {
         <Navbar.Brand as={Link} to={inicio}>
           {organizacao.logo
             ? <Image src={organizacao.logo} height={30} className="me-2" />
-            : <i className="bi bi-music-note-beamed me-2"></i>}
+            : <i className="bi bi-mortarboard me-2"></i>}
           {organizacao.nome}
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="menu" />

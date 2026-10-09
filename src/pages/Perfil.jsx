@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
-import { api, mensagemDeErro } from '../api/client'
+import { api, mensagemDeErro } from '../api/cliente.js'
 import { useAuth } from '../AuthContext'
 import { Foto } from '../components/Foto'
 

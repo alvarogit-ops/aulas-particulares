@@ -1,5 +1,5 @@
-const API = 'http://localhost:8000/api'
-export const ORGANIZACAO = 'escola-de-musica'
+const API = 'https://agendamentos.spaincentral.cloudapp.azure.com/api'
+export const ORGANIZACAO = 'aulas-particulares'
 
 function enviar(caminho, { method = 'GET', body } = {}) {
   const url = caminho.startsWith('http') ? caminho : API + caminho

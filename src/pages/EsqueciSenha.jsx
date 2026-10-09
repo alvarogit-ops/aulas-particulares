@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Alert, Button, Form } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import { mensagemDeErro, redefinirSenha } from '../api/client'
+import { mensagemDeErro, redefinirSenha } from '../api/cliente.js'
 
 export function EsqueciSenha() {
   const [email, setEmail] = useState('')

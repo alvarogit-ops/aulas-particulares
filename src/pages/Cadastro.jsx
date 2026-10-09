@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Alert, Button, Form } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import { cadastrar, mensagemDeErro } from '../api/client'
+import { cadastrar, mensagemDeErro } from '../api/cliente.js'
 import { useAuth } from '../AuthContext'
 
 export function Cadastro() {
