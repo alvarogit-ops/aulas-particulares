@@ -2,12 +2,15 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './AuthProvider'
 import { Layout } from './components/Layout'
 import { Publica } from './components/Publica'
+import { Agendar } from './pages/Agendar'
+import { Aulas } from './pages/Aulas'
 import { Cadastro } from './pages/Cadastro'
 import { Entrada } from './pages/Entradas'
 import { EsqueciSenha } from './pages/EsqueciSenha'
 import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
 import { Perfil } from './pages/Perfil'
+import { Professores } from './pages/Professores'
 
 function App() {
   return (
@@ -22,6 +25,11 @@ function App() {
           </Route>
           <Route element={<Layout />}>
             <Route path="/inicio" element={<Inicio />} />
+            <Route path="/agendar" element={<Agendar />} />
+            <Route path="/aulas" element={<Aulas />} />
+            <Route path="/professores" element={<Professores />} />
+            <Route path="/professores-materias" element={<Professores />} />
+            <Route path="/professires-materiais" element={<Professores />} />
             <Route path="/perfil" element={<Perfil />} />
           </Route>
         </Routes>
