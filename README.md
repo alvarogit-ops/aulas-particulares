@@ -87,8 +87,8 @@ A navegação da aplicação é orientada dinamicamente pelas permissões retorn
 
 1. **Clone o repositório:**
 ```bash
-git clone [https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git](https://github.com/SEU-USUARIO/SEU-REPOSITORIO.git)
-cd SEU-REPOSITORIO
+git clone [https://github.com/alvarogit-ops/aulas-particulares.git](https://github.com/alvarogit-ops/aulas-particulares.git)
+cd aulas-particulares
 
 ```
 
@@ -122,7 +122,7 @@ npm run lint
 
 O projeto está configurado para deploy contínuo na plataforma **Vercel**.
 
-* **URL de Produção:** `https://aulas-particulares-six.vercel.app/login`
+* **URL de Produção:** `https://aulas-particulares-six.vercel.app`
 * **Base URL da API:** `https://agendamentos.spaincentral.cloudapp.azure.com/api`
 * **Documentação Swagger:** [Acessar Swagger API](https://agendamentos.spaincentral.cloudapp.azure.com/api/docs/)
 
