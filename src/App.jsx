@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './AuthProvider'
+import { Admin } from './components/Admin'
 import { Layout } from './components/Layout'
 import { Publica } from './components/Publica'
 import { Agendar } from './pages/Agendar'
@@ -11,6 +12,16 @@ import { Inicio } from './pages/Inicio'
 import { Login } from './pages/Login'
 import { Perfil } from './pages/Perfil'
 import { Professores } from './pages/Professores'
+import { Agenda } from './pages/admin/Agenda'
+import { Avaliacoes } from './pages/admin/Avaliacoes'
+import { Confirmar } from './pages/admin/Confirmar'
+import { DetalheAula } from './pages/admin/DetalheAula'
+import { Horarios } from './pages/admin/Horarios'
+import { Negocio } from './pages/admin/Negocio'
+import { ProfessorForm } from './pages/admin/ProfessorForm'
+import { Professores as ProfessoresAdmin } from './pages/admin/Professores'
+import { ServicoForm } from './pages/admin/ServicoForm'
+import { Servicos } from './pages/admin/Servicos'
 
 function App() {
   return (
@@ -31,6 +42,20 @@ function App() {
             <Route path="/professores-materias" element={<Professores />} />
             <Route path="/professires-materiais" element={<Professores />} />
             <Route path="/perfil" element={<Perfil />} />
+            <Route element={<Admin />}>
+              <Route path="/admin/agenda" element={<Agenda />} />
+              <Route path="/admin/confirmar" element={<Confirmar />} />
+              <Route path="/admin/aulas/:id" element={<DetalheAula />} />
+              <Route path="/admin/negocio" element={<Negocio />} />
+              <Route path="/admin/professores" element={<ProfessoresAdmin />} />
+              <Route path="/admin/professores/novo" element={<ProfessorForm />} />
+              <Route path="/admin/professores/:id" element={<ProfessorForm />} />
+              <Route path="/admin/professores/:id/horarios" element={<Horarios />} />
+              <Route path="/admin/servicos" element={<Servicos />} />
+              <Route path="/admin/servicos/novo" element={<ServicoForm />} />
+              <Route path="/admin/servicos/:id" element={<ServicoForm />} />
+              <Route path="/admin/avaliacoes" element={<Avaliacoes />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>
