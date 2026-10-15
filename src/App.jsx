@@ -5,6 +5,8 @@ import { Publica } from './components/Publica'
 import { Agendar } from './pages/Agendar'
 import { Aulas } from './pages/Aulas'
 import { Cadastro } from './pages/Cadastro'
+import { AdminProfessores } from './pages/AdminProfessores'
+import { ConfirmarAulas } from './pages/ConfirmarAulas'
 import { Entrada } from './pages/Entradas'
 import { EsqueciSenha } from './pages/EsqueciSenha'
 import { Inicio } from './pages/Inicio'
@@ -24,6 +26,8 @@ function App() {
             <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           </Route>
           <Route element={<Layout />}>
+            <Route path="/aulas/confirmar" element={<ConfirmarAulas />} />
+            <Route path="/admin/professores" element={<AdminProfessores />} />
             <Route path="/inicio" element={<Inicio />} />
             <Route path="/agendar" element={<Agendar />} />
             <Route path="/aulas" element={<Aulas />} />

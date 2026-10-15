@@ -32,7 +32,11 @@ export function AuthProvider({ children }) {
     return usuario !== null && usuario.permissoes.includes(permissao)
   }
 
-  const inicio = pode('api.change_organizacao') ? '/admin/agenda' : '/inicio'
+  const inicio = pode('api.change_organizacao')
+    ? '/admin/professores'
+    : pode('api.confirmar_agendamento')
+      ? '/aulas/confirmar'
+      : '/inicio'
 
   return (
     <AuthContext value={{ usuario, setUsuario, carregando, entrar, sair, pode, inicio }}>

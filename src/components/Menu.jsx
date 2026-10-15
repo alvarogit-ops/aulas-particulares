@@ -20,8 +20,14 @@ export function Menu() {
         <Navbar.Collapse id="menu">
           {pode('api.change_organizacao') ? (
             <Nav className="me-auto">
-              <Nav.Link as={NavLink} to="/admin/agenda">Agenda</Nav.Link>
-              <Nav.Link as={NavLink} to="/admin/confirmar">A confirmar</Nav.Link>
+              <Nav.Link as={NavLink} to="/admin/professores">Professores</Nav.Link>
+              {pode('api.confirmar_agendamento') && (
+                <Nav.Link as={NavLink} to="/aulas/confirmar">Aulas para confirmar</Nav.Link>
+              )}
+            </Nav>
+          ) : pode('api.confirmar_agendamento') ? (
+            <Nav className="me-auto">
+              <Nav.Link as={NavLink} to="/aulas/confirmar">Aulas para confirmar</Nav.Link>
             </Nav>
           ) : (
             <Nav className="me-auto">
