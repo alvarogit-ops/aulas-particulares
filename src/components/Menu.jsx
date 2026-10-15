@@ -1,4 +1,4 @@
-import { Container, Image, Nav, NavDropdown, Navbar } from 'react-bootstrap'
+import { Container, Image, Nav, Navbar } from 'react-bootstrap'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { Foto } from './Foto'
@@ -22,12 +22,6 @@ export function Menu() {
             <Nav className="me-auto">
               <Nav.Link as={NavLink} to="/admin/agenda">Agenda</Nav.Link>
               <Nav.Link as={NavLink} to="/admin/confirmar">A confirmar</Nav.Link>
-              <NavDropdown title="Cadastros" id="menu-cadastros">
-                <NavDropdown.Item as={NavLink} to="/admin/negocio">Negócio</NavDropdown.Item>
-                <NavDropdown.Item as={NavLink} to="/admin/professores">Professores</NavDropdown.Item>
-                <NavDropdown.Item as={NavLink} to="/admin/servicos">Disciplinas</NavDropdown.Item>
-              </NavDropdown>
-              <Nav.Link as={NavLink} to="/admin/avaliacoes">Avaliações</Nav.Link>
             </Nav>
           ) : (
             <Nav className="me-auto">
