@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
+import { listarTudo } from '../api/admin.js'
+import { servicosDoProfessor } from '../data/materias'
 import { Foto } from '../components/Foto'
-import { nomesDasMaterias } from '../data/materias'
-import { carregarProfessoresAtivos } from '../data/professores'
 
 const dadosIniciais = {
   professorId: '',
-  materia: '',
+  servicoId: '',
   data: '',
   horario: '09:00',
   duracao: '1h',
@@ -21,18 +21,19 @@ export function Agendar() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [professores, setProfessores] = useState([])
+  const [servicos, setServicos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erroCarregar, setErroCarregar] = useState('')
 
   useEffect(() => {
     let ativo = true
 
-    carregarProfessoresAtivos()
-      .then(lista => {
-        if (ativo) {
-          setProfessores(Array.isArray(lista) ? lista : [])
-          setErroCarregar('')
-        }
+    Promise.all([listarTudo('/recursos/?ativo=true'), listarTudo('/servicos/?ativo=true')])
+      .then(([listaProfessores, listaServicos]) => {
+        if (!ativo) return
+        setProfessores(listaProfessores)
+        setServicos(listaServicos)
+        setErroCarregar('')
       })
       .catch(() => {
         if (ativo) setErroCarregar('Não foi possível carregar os professores disponíveis.')
@@ -44,27 +45,30 @@ export function Agendar() {
     return () => { ativo = false }
   }, [])
 
-  useEffect(() => {
-    if (Array.isArray(professores) && professores.length && !form.professorId) {
-      const primeiro = professores[0]
-      const materias = nomesDasMaterias(primeiro.materias ?? primeiro.servicos ?? [])
-      setForm(prev => ({ ...prev, professorId: String(primeiro.id), materia: materias[0] ?? '' }))
-    }
-  }, [professores, form.professorId])
-
   const professor = useMemo(
     () => (Array.isArray(professores) ? professores.find(item => String(item.id) === String(form.professorId)) ?? professores[0] : null),
     [form.professorId, professores],
   )
 
-  useEffect(() => {
-    if (professor && !form.materia) {
-      const materias = nomesDasMaterias(professor.materias ?? professor.servicos ?? [])
-      setForm(prev => ({ ...prev, materia: materias[0] ?? '' }))
-    }
-  }, [professor, form.materia])
+  const disciplinasProfessor = useMemo(() => servicosDoProfessor(professor, servicos), [professor, servicos])
+  const servicoSelecionado = disciplinasProfessor.find(item => String(item.id) === String(form.servicoId)) ?? disciplinasProfessor[0]
 
-  const valorHora = Number(professor?.valor_hora ?? professor?.valorHora ?? professor?.valor ?? professor?.preco ?? 0)
+  useEffect(() => {
+    if (!professores.length || !servicos.length) return
+    const prof = professores.find(item => String(item.id) === String(form.professorId)) ?? professores[0]
+    const disciplinas = servicosDoProfessor(prof, servicos)
+    setForm(prev => ({
+      ...prev,
+      professorId: String(prof.id),
+      servicoId: disciplinas.some(item => String(item.id) === String(prev.servicoId))
+        ? prev.servicoId
+        : String(disciplinas[0]?.id ?? ''),
+    }))
+  }, [professores, servicos, form.professorId])
+
+  const valorHora = servicoSelecionado
+    ? Number(servicoSelecionado.preco ?? 0) / Math.max(Number(servicoSelecionado.duracao_min ?? 60) / 60, 1 / 60)
+    : 0
 
   const multiplicadorDuracao = useMemo(() => {
     const valor = String(form.duracao)
@@ -89,11 +93,17 @@ export function Agendar() {
       return
     }
 
+    if (!servicoSelecionado) {
+      setErro('Este professor ainda não tem disciplinas cadastradas.')
+      return
+    }
+
     const valorTotal = Number((valorHora * multiplicadorDuracao).toFixed(2))
     const reserva = {
       ...form,
       professor: professor?.nome ?? 'Professor',
-      materia: form.materia || nomesDasMaterias(professor?.materias ?? professor?.servicos ?? [])[0] || '',
+      materia: servicoSelecionado?.nome ?? '',
+      servicoId: servicoSelecionado?.id ?? '',
       valor: valorTotal,
       custoEstimado: valorTotal,
       status: 'Agendada',
@@ -104,7 +114,7 @@ export function Agendar() {
     const proximo = [reserva, ...existentes]
     localStorage.setItem('reservas', JSON.stringify(proximo))
     setSucesso(`Reserva confirmada com ${reserva.professor} para ${form.data} às ${form.horario}.`)
-    setForm({ ...dadosIniciais, professorId: professor ? String(professor.id) : '', materia: nomesDasMaterias(professor?.materias ?? professor?.servicos ?? [])[0] ?? '' })
+    setForm({ ...dadosIniciais, professorId: professor ? String(professor.id) : '', servicoId: servicoSelecionado ? String(servicoSelecionado.id) : '' })
     setTimeout(() => navigate('/aulas'), 800)
   }
 
@@ -129,7 +139,7 @@ export function Agendar() {
     )
   }
 
-  const materiasProfessor = nomesDasMaterias(professor.materias ?? professor.servicos ?? [])
+  const nomesDisciplinas = disciplinasProfessor.map(servico => servico.nome)
 
   return (
     <Row className="g-4">
@@ -140,13 +150,13 @@ export function Agendar() {
               <Foto src={professor.foto} tamanho={64} />
               <div>
                 <h4 className="mb-0">{professor.nome}</h4>
-                <small className="text-secondary">{materiasProfessor[0] ?? 'Matéria não informada'}</small>
+                <small className="text-secondary">{nomesDisciplinas[0] ?? 'Disciplina não informada'}</small>
               </div>
             </div>
 
             <Badge bg="primary-subtle" text="primary" className="mb-3">{professor.capacidade ? `Até ${professor.capacidade} alunos` : 'Professor'}</Badge>
             <p className="mb-2"><strong>Bio:</strong> {professor.bio || 'Sem descrição disponível.'}</p>
-            <p className="mb-0"><strong>Matérias:</strong> {materiasProfessor.length ? materiasProfessor.join(', ') : 'Não informada'}</p>
+            <p className="mb-0"><strong>Disciplinas:</strong> {nomesDisciplinas.length ? nomesDisciplinas.join(', ') : 'Não informada'}</p>
           </Card.Body>
         </Card>
       </Col>
@@ -164,19 +174,11 @@ export function Agendar() {
                 <Form.Label>Professor</Form.Label>
                 <Form.Select value={form.professorId} onChange={e => {
                   const valor = e.target.value
-                  atualizarCampo('professorId', valor)
                   const prof = professores.find(item => String(item.id) === String(valor))
-                  if (prof) {
-                    const materias = nomesDasMaterias(prof.materias ?? prof.servicos ?? [])
-                    atualizarCampo('materia', materias[0] ?? '')
-                  }
+                  const disciplinas = servicosDoProfessor(prof, servicos)
+                  setForm(prev => ({ ...prev, professorId: valor, servicoId: String(disciplinas[0]?.id ?? '') }))
                 }}>
-                  {professores.map(prof => {
-                    const materias = nomesDasMaterias(prof.materias ?? prof.servicos ?? [])
-                    return (
-                      <option key={prof.id} value={prof.id}>{prof.nome}{materias.length ? ` - ${materias.join(', ')}` : ''}</option>
-                    )
-                  })}
+                  {professores.map(prof => <option key={prof.id} value={prof.id}>{prof.nome}</option>)}
                 </Form.Select>
               </Form.Group>
 
@@ -219,8 +221,12 @@ export function Agendar() {
               </Row>
 
               <Form.Group className="mb-3">
-                <Form.Label>Matéria</Form.Label>
-                <Form.Control type="text" value={form.materia || materiasProfessor[0] || ''} onChange={e => atualizarCampo('materia', e.target.value)} />
+                <Form.Label>Disciplina</Form.Label>
+                <Form.Select value={servicoSelecionado?.id ?? ''} onChange={e => atualizarCampo('servicoId', e.target.value)} required disabled={!disciplinasProfessor.length}>
+                  {disciplinasProfessor.length
+                    ? disciplinasProfessor.map(servico => <option key={servico.id} value={servico.id}>{servico.nome}</option>)
+                    : <option value="">Este professor ainda não tem disciplinas cadastradas</option>}
+                </Form.Select>
               </Form.Group>
 
               <Form.Group className="mb-3">
