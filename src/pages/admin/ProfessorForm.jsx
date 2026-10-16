@@ -66,15 +66,23 @@ function Formulario({ inicial, id }) {
 
   function handleSubmit(e) {
     e.preventDefault()
-    const formulario = new FormData()
-    formulario.append('nome', nome)
-    formulario.append('bio', bio)
-    formulario.append('capacidade', capacidade)
-    formulario.append('valor_hora', String(valorHora ?? '').replace(',', '.'))
-    formulario.append('ativo', String(ativo))
-    materias.forEach(materiaId => formulario.append('materias', String(materiaId)))
-    if (foto) formulario.append('foto', foto)
-    enviar(formulario, () => navigate('/admin/professores'))
+    const campos = {
+      nome,
+      bio,
+      capacidade: Number(capacidade) || 1,
+      valor_hora: Number(String(valorHora ?? '').replace(',', '.')) || 0,
+      ativo,
+      materias,
+    }
+    let corpo = campos
+    if (foto) {
+      corpo = new FormData()
+      Object.entries(campos).forEach(([chave, valor]) => {
+        corpo.append(chave, Array.isArray(valor) ? JSON.stringify(valor) : String(valor))
+      })
+      corpo.append('foto', foto)
+    }
+    enviar(corpo, () => navigate('/admin/professores'))
   }
 
   return (
