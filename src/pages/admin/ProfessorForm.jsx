@@ -5,6 +5,8 @@ import { api, mensagemDeErro } from '../../api/cliente.js'
 import { Campo } from '../../components/admin/Campo'
 import { Estado } from '../../components/admin/Estado'
 import { Foto } from '../../components/Foto'
+import { MATERIAS } from '../../data/materias'
+import { adicionarProfessorLocal } from '../../data/professores'
 import { useCarregar } from '../../hooks/useCarregar'
 
 function Formulario({ inicial, id }) {
@@ -13,6 +15,13 @@ function Formulario({ inicial, id }) {
   const [bio, setBio] = useState(inicial.bio ?? '')
   const [capacidade, setCapacidade] = useState(inicial.capacidade ?? 1)
   const [ativo, setAtivo] = useState(inicial.ativo ?? true)
+  const [materias, setMaterias] = useState(
+    Array.isArray(inicial.materias)
+      ? inicial.materias.map(item => typeof item === 'object' ? item.id ?? item.slug : item)
+      : Array.isArray(inicial.servicos)
+        ? inicial.servicos.map(item => typeof item === 'object' ? item.id ?? item.slug : item)
+        : []
+  )
   const [foto, setFoto] = useState(null)
   const [fotoAtual, setFotoAtual] = useState(inicial.foto ?? null)
   const [erro, setErro] = useState(null)
@@ -25,6 +34,17 @@ function Formulario({ inicial, id }) {
     setErros({})
     try {
       const resposta = await api(id ? `/recursos/${id}/` : '/recursos/', { method: id ? 'PATCH' : 'POST', body: corpo })
+      if (resposta && resposta.id) {
+        adicionarProfessorLocal({
+          ...resposta,
+          nome: resposta.nome || nome,
+          bio: resposta.bio || bio,
+          capacidade: resposta.capacidade ?? capacidade,
+          ativo: resposta.ativo ?? ativo,
+          foto: resposta.foto || fotoAtual,
+          materias: materias.length ? materias : (resposta.materias ?? []),
+        })
+      }
       aoConcluir(resposta)
     } catch (e) {
       setErro(mensagemDeErro(e))
@@ -34,6 +54,10 @@ function Formulario({ inicial, id }) {
     }
   }
 
+  function alternarMateria(materiaId) {
+    setMaterias(atual => (atual.includes(materiaId) ? atual.filter(x => x !== materiaId) : [...atual, materiaId]))
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     const formulario = new FormData()
@@ -41,13 +65,14 @@ function Formulario({ inicial, id }) {
     formulario.append('bio', bio)
     formulario.append('capacidade', capacidade)
     formulario.append('ativo', String(ativo))
+    materias.forEach(materiaId => formulario.append('materias', materiaId))
     if (foto) formulario.append('foto', foto)
     enviar(formulario, () => navigate('/admin/professores'))
   }
 
   return (
     <Row className="justify-content-center">
-      <Col md={8} lg={6}>
+      <Col md={8} lg={7}>
         <Card className="shadow-sm">
           <Card.Body>
             {erro && <Alert variant="danger">{erro}</Alert>}
@@ -67,6 +92,18 @@ function Formulario({ inicial, id }) {
               <Campo label="Foto" erro={erros.foto}>
                 <Form.Control type="file" accept="image/*" onChange={e => setFoto(e.target.files[0])} isInvalid={!!erros.foto} />
               </Campo>
+              <Campo label="Matérias que ministra" erro={erros.materias}>
+                {MATERIAS.map(materia => (
+                  <Form.Check
+                    key={materia.id}
+                    type="checkbox"
+                    id={`materia-${materia.id}`}
+                    label={materia.nome}
+                    checked={materias.includes(materia.id)}
+                    onChange={() => alternarMateria(materia.id)}
+                  />
+                ))}
+              </Campo>
               <Form.Check
                 type="switch"
                 id="ativo"
@@ -78,11 +115,6 @@ function Formulario({ inicial, id }) {
               <div className="d-flex gap-2 flex-wrap">
                 <Button type="submit" disabled={enviando}>Salvar</Button>
                 <Button as={Link} to="/admin/professores" variant="outline-secondary">Cancelar</Button>
-                {id && (
-                  <Button as={Link} to={`/admin/professores/${id}/horarios`} variant="outline-primary">
-                    <i className="bi bi-clock"></i> Horários
-                  </Button>
-                )}
                 {id && fotoAtual && (
                   <Button
                     variant="outline-secondary"
@@ -107,6 +139,7 @@ export function ProfessorForm() {
     () => (id ? api(`/recursos/${id}/`) : Promise.resolve({})),
     [id],
   )
+
   return (
     <>
       <h2 className="mb-4">{id ? 'Editar professor' : 'Novo professor'}</h2>

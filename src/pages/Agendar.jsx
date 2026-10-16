@@ -1,51 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
-
-const professores = [
-  {
-    id: 1,
-    nome: 'Ana Beatriz',
-    materia: 'Matemática',
-    nivel: 'Ensino Médio',
-    valor: 70,
-    disponibilidade: 'Segunda e Quarta, 18h às 20h',
-    foto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80'
-  },
-  {
-    id: 2,
-    nome: 'Carlos Mendes',
-    materia: 'Física',
-    nivel: 'Pré-vestibular',
-    valor: 85,
-    disponibilidade: 'Terça e Quinta, 17h às 19h',
-    foto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80'
-  },
-  {
-    id: 3,
-    nome: 'Lívia Costa',
-    materia: 'Inglês',
-    nivel: 'Todos os níveis',
-    valor: 65,
-    disponibilidade: 'Quarta e Sexta, 19h às 21h',
-    foto: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=300&q=80'
-  },
-  {
-    id: 4,
-    nome: 'Mateus Silva',
-    materia: 'Química',
-    nivel: 'Ensino Médio',
-    valor: 80,
-    disponibilidade: 'Segunda, Quarta e Sábado, 9h às 12h',
-    foto: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80'
-  }
-]
+import { Foto } from '../components/Foto'
+import { nomesDasMaterias } from '../data/materias'
+import { carregarProfessoresAtivos } from '../data/professores'
 
 const dadosIniciais = {
-  professorId: 1,
-  materia: 'Matemática',
-  data: '2026-10-12',
-  horario: '18:00',
+  professorId: '',
+  materia: '',
+  data: '',
+  horario: '09:00',
   duracao: '1h',
   modalidade: 'Presencial',
   observacoes: ''
@@ -56,11 +20,49 @@ export function Agendar() {
   const [form, setForm] = useState(dadosIniciais)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
+  const [professores, setProfessores] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erroCarregar, setErroCarregar] = useState('')
+
+  useEffect(() => {
+    let ativo = true
+
+    carregarProfessoresAtivos()
+      .then(lista => {
+        if (ativo) {
+          setProfessores(Array.isArray(lista) ? lista : [])
+          setErroCarregar('')
+        }
+      })
+      .catch(() => {
+        if (ativo) setErroCarregar('Não foi possível carregar os professores disponíveis.')
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false)
+      })
+
+    return () => { ativo = false }
+  }, [])
+
+  useEffect(() => {
+    if (Array.isArray(professores) && professores.length && !form.professorId) {
+      const primeiro = professores[0]
+      const materias = nomesDasMaterias(primeiro.materias ?? primeiro.servicos ?? [])
+      setForm(prev => ({ ...prev, professorId: String(primeiro.id), materia: materias[0] ?? '' }))
+    }
+  }, [professores, form.professorId])
 
   const professor = useMemo(
-    () => professores.find(item => String(item.id) === String(form.professorId)) ?? professores[0],
-    [form.professorId]
+    () => (Array.isArray(professores) ? professores.find(item => String(item.id) === String(form.professorId)) ?? professores[0] : null),
+    [form.professorId, professores],
   )
+
+  useEffect(() => {
+    if (professor && !form.materia) {
+      const materias = nomesDasMaterias(professor.materias ?? professor.servicos ?? [])
+      setForm(prev => ({ ...prev, materia: materias[0] ?? '' }))
+    }
+  }, [professor, form.materia])
 
   function atualizarCampo(campo, valor) {
     setForm(prev => ({ ...prev, [campo]: valor }))
@@ -78,9 +80,9 @@ export function Agendar() {
 
     const reserva = {
       ...form,
-      professor: professor.nome,
-      materia: professor.materia,
-      valor: professor.valor,
+      professor: professor?.nome ?? 'Professor',
+      materia: form.materia || nomesDasMaterias(professor?.materias ?? professor?.servicos ?? [])[0] || '',
+      valor: professor?.valor ?? 0,
       status: 'Agendada',
       codigo: `AULA-${Date.now().toString().slice(-6)}`
     }
@@ -88,10 +90,33 @@ export function Agendar() {
     const existentes = JSON.parse(localStorage.getItem('reservas') || '[]')
     const proximo = [reserva, ...existentes]
     localStorage.setItem('reservas', JSON.stringify(proximo))
-    setSucesso(`Reserva confirmada com ${professor.nome} para ${form.data} às ${form.horario}.`)
-    setForm(dadosIniciais)
+    setSucesso(`Reserva confirmada com ${reserva.professor} para ${form.data} às ${form.horario}.`)
+    setForm({ ...dadosIniciais, professorId: professor ? String(professor.id) : '', materia: nomesDasMaterias(professor?.materias ?? professor?.servicos ?? [])[0] ?? '' })
     setTimeout(() => navigate('/aulas'), 800)
   }
+
+  if (carregando) {
+    return <div className="text-center py-5">Carregando professores…</div>
+  }
+
+  if (erroCarregar) {
+    return (
+      <Alert variant="danger" className="d-flex justify-content-between align-items-center">
+        <span>{erroCarregar}</span>
+        <Button variant="outline-danger" size="sm" onClick={() => window.location.reload()}>Tentar de novo</Button>
+      </Alert>
+    )
+  }
+
+  if (!professor) {
+    return (
+      <Alert variant="warning">
+        Ainda não há professores ativos para agendar. Cadastre um professor no painel admin.
+      </Alert>
+    )
+  }
+
+  const materiasProfessor = nomesDasMaterias(professor.materias ?? professor.servicos ?? [])
 
   return (
     <Row className="g-4">
@@ -99,16 +124,16 @@ export function Agendar() {
         <Card className="shadow-sm h-100">
           <Card.Body>
             <div className="d-flex align-items-center gap-3 mb-4">
-              <img src={professor.foto} alt={professor.nome} className="rounded-circle" width={64} height={64} style={{ objectFit: 'cover' }} />
+              <Foto src={professor.foto} tamanho={64} />
               <div>
                 <h4 className="mb-0">{professor.nome}</h4>
-                <small className="text-secondary">{professor.materia}</small>
+                <small className="text-secondary">{materiasProfessor[0] ?? 'Matéria não informada'}</small>
               </div>
             </div>
 
-            <Badge bg="primary-subtle" text="primary" className="mb-3">{professor.nivel}</Badge>
-            <p className="mb-2"><strong>Disponibilidade:</strong> {professor.disponibilidade}</p>
-            <p className="mb-0"><strong>Valor da aula:</strong> R$ {professor.valor.toFixed(2)}</p>
+            <Badge bg="primary-subtle" text="primary" className="mb-3">{professor.capacidade ? `Até ${professor.capacidade} alunos` : 'Professor'}</Badge>
+            <p className="mb-2"><strong>Bio:</strong> {professor.bio || 'Sem descrição disponível.'}</p>
+            <p className="mb-0"><strong>Matérias:</strong> {materiasProfessor.length ? materiasProfessor.join(', ') : 'Não informada'}</p>
           </Card.Body>
         </Card>
       </Col>
@@ -124,10 +149,21 @@ export function Agendar() {
             <Form onSubmit={reservar}>
               <Form.Group className="mb-3">
                 <Form.Label>Professor</Form.Label>
-                <Form.Select value={form.professorId} onChange={e => atualizarCampo('professorId', e.target.value)}>
-                  {professores.map(prof => (
-                    <option key={prof.id} value={prof.id}>{prof.nome} - {prof.materia}</option>
-                  ))}
+                <Form.Select value={form.professorId} onChange={e => {
+                  const valor = e.target.value
+                  atualizarCampo('professorId', valor)
+                  const prof = professores.find(item => String(item.id) === String(valor))
+                  if (prof) {
+                    const materias = nomesDasMaterias(prof.materias ?? prof.servicos ?? [])
+                    atualizarCampo('materia', materias[0] ?? '')
+                  }
+                }}>
+                  {professores.map(prof => {
+                    const materias = nomesDasMaterias(prof.materias ?? prof.servicos ?? [])
+                    return (
+                      <option key={prof.id} value={prof.id}>{prof.nome}{materias.length ? ` - ${materias.join(', ')}` : ''}</option>
+                    )
+                  })}
                 </Form.Select>
               </Form.Group>
 
@@ -171,7 +207,7 @@ export function Agendar() {
 
               <Form.Group className="mb-3">
                 <Form.Label>Matéria</Form.Label>
-                <Form.Control type="text" value={professor.materia} readOnly />
+                <Form.Control type="text" value={form.materia || materiasProfessor[0] || ''} onChange={e => atualizarCampo('materia', e.target.value)} />
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -181,7 +217,7 @@ export function Agendar() {
 
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <strong>Total estimado:</strong> R$ {professor.valor.toFixed(2)}
+                  <strong>Total estimado:</strong> R$ {Number(professor?.preco ?? 0).toFixed(2)}
                 </div>
                 <Button type="submit" size="lg">Confirmar reserva</Button>
               </div>

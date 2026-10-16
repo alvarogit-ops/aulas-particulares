@@ -1,74 +1,89 @@
-import { Badge, Card, Col, ListGroup, Row } from 'react-bootstrap'
-
-const professores = [
-  {
-    nome: 'Ana Beatriz',
-    materia: 'Matemática',
-    nivel: 'Ensino Fundamental II e Médio',
-    descricao: 'Aulas focadas em reforço escolar e preparação para provas.',
-    disponibilidade: 'Segunda e Quarta, 18h às 20h',
-    valor: 'R$ 70/h'
-  },
-  {
-    nome: 'Carlos Mendes',
-    materia: 'Física',
-    nivel: 'Pré-vestibular e ensino médio',
-    descricao: 'Explicações claras com resolução de exercícios e revisão de conteúdo.',
-    disponibilidade: 'Terça e Quinta, 17h às 19h',
-    valor: 'R$ 85/h'
-  },
-  {
-    nome: 'Lívia Costa',
-    materia: 'Inglês',
-    nivel: 'Todos os níveis',
-    descricao: 'Aulas de conversação, pronúncia e foco em speaking e listening.',
-    disponibilidade: 'Quarta e Sexta, 19h às 21h',
-    valor: 'R$ 65/h'
-  },
-  {
-    nome: 'Mateus Silva',
-    materia: 'Química',
-    nivel: 'Ensino Médio',
-    descricao: 'Conteúdo teórico com exercícios de laboratório e revisão de vestibular.',
-    disponibilidade: 'Segunda, Quarta e Sábado, 9h às 12h',
-    valor: 'R$ 80/h'
-  }
-]
+import { useEffect, useState } from 'react'
+import { Alert, Badge, Button, Card, Col, ListGroup, Row } from 'react-bootstrap'
+import { Foto } from '../components/Foto'
+import { nomesDasMaterias } from '../data/materias'
+import { carregarProfessoresAtivos } from '../data/professores'
 
 export function Professores() {
+  const [professores, setProfessores] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let ativo = true
+
+    carregarProfessoresAtivos()
+      .then(lista => {
+        if (ativo) {
+          setProfessores(Array.isArray(lista) ? lista : [])
+          setErro('')
+        }
+      })
+      .catch(() => {
+        if (ativo) setErro('Não foi possível carregar os professores.')
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false)
+      })
+
+    return () => { ativo = false }
+  }, [])
+
+  if (carregando) return <div className="text-center py-5">Carregando professores…</div>
+
+  if (erro) {
+    return (
+      <Alert variant="danger" className="d-flex justify-content-between align-items-center">
+        <span>{erro}</span>
+        <Button variant="outline-danger" size="sm" onClick={() => window.location.reload()}>Tentar de novo</Button>
+      </Alert>
+    )
+  }
+
   return (
     <Row className="g-4">
       <Col md={12}>
         <h2 className="mb-4">Professores e matérias</h2>
       </Col>
 
-      {professores.map((professor) => (
-        <Col lg={6} key={professor.nome}>
-          <Card className="shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h4 className="mb-1">{professor.nome}</h4>
-                  <Badge bg="primary-subtle" text="primary">{professor.materia}</Badge>
-                </div>
-                <strong>{professor.valor}</strong>
-              </div>
+      {professores.length ? professores.map((professor) => {
+        const materias = nomesDasMaterias(professor.materias ?? professor.servicos ?? [])
 
-              <ListGroup variant="flush">
-                <ListGroup.Item className="px-0">
-                  <strong>Nível:</strong> {professor.nivel}
-                </ListGroup.Item>
-                <ListGroup.Item className="px-0">
-                  <strong>Disponibilidade:</strong> {professor.disponibilidade}
-                </ListGroup.Item>
-                <ListGroup.Item className="px-0">
-                  <strong>Descrição:</strong> {professor.descricao}
-                </ListGroup.Item>
-              </ListGroup>
-            </Card.Body>
-          </Card>
+        return (
+          <Col lg={6} key={professor.id}>
+            <Card className="shadow-sm h-100">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-start mb-3 gap-3">
+                  <div className="d-flex align-items-center gap-3">
+                    <Foto src={professor.foto} tamanho={56} />
+                    <div>
+                      <h4 className="mb-1">{professor.nome}</h4>
+                      {materias.length ? materias.map((materia, index) => (
+                        <Badge key={`${professor.id}-${materia}-${index}`} bg="primary-subtle" text="primary" className="me-1 mb-1">
+                          {materia}
+                        </Badge>
+                      )) : <Badge bg="secondary-subtle" text="secondary">Sem matéria</Badge>}
+                    </div>
+                  </div>
+                </div>
+
+                <ListGroup variant="flush">
+                  <ListGroup.Item className="px-0">
+                    <strong>Capacidade:</strong> {professor.capacidade ?? 1}
+                  </ListGroup.Item>
+                  <ListGroup.Item className="px-0">
+                    <strong>Descrição:</strong> {professor.bio || 'Sem descrição disponível.'}
+                  </ListGroup.Item>
+                </ListGroup>
+              </Card.Body>
+            </Card>
+          </Col>
+        )
+      }) : (
+        <Col md={12}>
+          <p className="text-secondary mb-0">Nenhum professor cadastrado no momento.</p>
         </Col>
-      ))}
+      )}
     </Row>
   )
 }
