@@ -17,9 +17,9 @@ function Formulario({ inicial, id }) {
   const [ativo, setAtivo] = useState(inicial.ativo ?? true)
   const [materias, setMaterias] = useState(
     Array.isArray(inicial.materias)
-      ? inicial.materias.map(item => typeof item === 'object' ? item.id ?? item.slug : item)
+      ? inicial.materias.map(item => String(typeof item === 'object' ? item.id ?? item.slug : item))
       : Array.isArray(inicial.servicos)
-        ? inicial.servicos.map(item => typeof item === 'object' ? item.id ?? item.slug : item)
+        ? inicial.servicos.map(item => String(typeof item === 'object' ? item.id ?? item.slug : item))
         : []
   )
   const [valorHora, setValorHora] = useState(inicial.valor_hora ?? inicial.valorHora ?? inicial.valor ?? inicial.preco ?? 0)
@@ -58,7 +58,10 @@ function Formulario({ inicial, id }) {
   }
 
   function alternarMateria(materiaId) {
-    setMaterias(atual => (atual.includes(materiaId) ? atual.filter(x => x !== materiaId) : [...atual, materiaId]))
+    setMaterias(atual => {
+      const id = String(materiaId)
+      return atual.includes(id) ? atual.filter(x => x !== id) : [...atual, id]
+    })
   }
 
   function handleSubmit(e) {
@@ -67,9 +70,9 @@ function Formulario({ inicial, id }) {
     formulario.append('nome', nome)
     formulario.append('bio', bio)
     formulario.append('capacidade', capacidade)
-    formulario.append('valor_hora', Number(valorHora) || 0)
+    formulario.append('valor_hora', String(valorHora ?? '').replace(',', '.'))
     formulario.append('ativo', String(ativo))
-    materias.forEach(materiaId => formulario.append('materias', materiaId))
+    materias.forEach(materiaId => formulario.append('materias', String(materiaId)))
     if (foto) formulario.append('foto', foto)
     enviar(formulario, () => navigate('/admin/professores'))
   }
@@ -114,7 +117,7 @@ function Formulario({ inicial, id }) {
                     type="checkbox"
                     id={`materia-${materia.id}`}
                     label={materia.nome}
-                    checked={materias.includes(materia.id)}
+                    checked={materias.includes(String(materia.id))}
                     onChange={() => alternarMateria(materia.id)}
                   />
                 ))}
