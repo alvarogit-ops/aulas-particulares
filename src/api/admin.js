@@ -27,7 +27,7 @@ export const STATUS = {
 
 // Nomes dos campos enviados à API. Se o Swagger usar outros nomes, ajuste só aqui.
 export const CAMPOS = {
-  duracao: 'duracao_minutos',
+  duracao: 'duracao_min',
   diaSemana: 'dia_semana',
   horaInicio: 'hora_inicio',
   horaFim: 'hora_fim',

@@ -1,28 +1,23 @@
 import { useState } from 'react'
 import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { idDe, listarTudo } from '../../api/admin.js'
 import { api, mensagemDeErro } from '../../api/cliente.js'
 import { Campo } from '../../components/admin/Campo'
 import { Estado } from '../../components/admin/Estado'
 import { Foto } from '../../components/Foto'
-import { MATERIAS } from '../../data/materias'
 import { adicionarProfessorLocal } from '../../data/professores'
 import { useCarregar } from '../../hooks/useCarregar'
 
-function Formulario({ inicial, id }) {
+function Formulario({ inicial, id, servicos }) {
   const navigate = useNavigate()
   const [nome, setNome] = useState(inicial.nome ?? '')
   const [bio, setBio] = useState(inicial.bio ?? '')
   const [capacidade, setCapacidade] = useState(inicial.capacidade ?? 1)
   const [ativo, setAtivo] = useState(inicial.ativo ?? true)
-  const [materias, setMaterias] = useState(
-    Array.isArray(inicial.materias)
-      ? inicial.materias.map(item => typeof item === 'object' ? item.id ?? item.slug : item)
-      : Array.isArray(inicial.servicos)
-        ? inicial.servicos.map(item => typeof item === 'object' ? item.id ?? item.slug : item)
-        : []
+  const [servicosSelecionados, setServicosSelecionados] = useState(
+    (inicial.servicos ?? []).map(item => Number(idDe(item))).filter(Number.isFinite),
   )
-  const [valorHora, setValorHora] = useState(inicial.valor_hora ?? inicial.valorHora ?? inicial.valor ?? inicial.preco ?? 0)
   const [foto, setFoto] = useState(null)
   const [fotoAtual, setFotoAtual] = useState(inicial.foto ?? null)
   const [erro, setErro] = useState(null)
@@ -41,11 +36,9 @@ function Formulario({ inicial, id }) {
           nome: resposta.nome || nome,
           bio: resposta.bio || bio,
           capacidade: resposta.capacidade ?? capacidade,
-          valor_hora: resposta.valor_hora ?? resposta.valorHora ?? resposta.valor ?? resposta.preco ?? valorHora,
-          valorHora: resposta.valor_hora ?? resposta.valorHora ?? resposta.valor ?? resposta.preco ?? valorHora,
           ativo: resposta.ativo ?? ativo,
           foto: resposta.foto || fotoAtual,
-          materias: materias.length ? materias : (resposta.materias ?? []),
+          servicos: servicosSelecionados,
         })
       }
       aoConcluir(resposta)
@@ -57,21 +50,66 @@ function Formulario({ inicial, id }) {
     }
   }
 
-  function alternarMateria(materiaId) {
-    setMaterias(atual => (atual.includes(materiaId) ? atual.filter(x => x !== materiaId) : [...atual, materiaId]))
+  function alternarServico(servicoId) {
+    const sid = Number(servicoId)
+    setServicosSelecionados(atual => atual.includes(sid) ? atual.filter(x => x !== sid) : [...atual, sid])
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    const formulario = new FormData()
-    formulario.append('nome', nome)
-    formulario.append('bio', bio)
-    formulario.append('capacidade', capacidade)
-    formulario.append('valor_hora', Number(valorHora) || 0)
-    formulario.append('ativo', String(ativo))
-    materias.forEach(materiaId => formulario.append('materias', materiaId))
-    if (foto) formulario.append('foto', foto)
-    enviar(formulario, () => navigate('/admin/professores'))
+    const campos = {
+      nome,
+      bio,
+      capacidade: Number(capacidade) || 1,
+      ativo,
+    }
+    let corpo = campos
+    if (foto) {
+      corpo = new FormData()
+      Object.entries(campos).forEach(([chave, valor]) => {
+        if (Array.isArray(valor)) valor.forEach(item => corpo.append(chave, String(item)))
+        else corpo.append(chave, String(valor))
+      })
+      corpo.append('foto', foto)
+    }
+    setEnviando(true)
+    setErro(null)
+    setErros({})
+    try {
+      const resposta = await api(id ? `/recursos/${id}/` : '/recursos/', {
+        method: id ? 'PATCH' : 'POST',
+        body: corpo,
+      })
+      const professorId = Number(resposta?.id ?? id)
+      if (!professorId) throw new Error('A API não retornou o ID do professor.')
+
+      for (const servico of servicos) {
+        const recursosAtuais = (servico.recursos ?? []).map(item => Number(idDe(item)))
+        const deveVincular = servicosSelecionados.includes(Number(servico.id))
+        const jaVinculado = recursosAtuais.includes(professorId)
+        if (deveVincular === jaVinculado) continue
+        const recursos = deveVincular
+          ? [...recursosAtuais, professorId]
+          : recursosAtuais.filter(recursoId => recursoId !== professorId)
+        await api(`/servicos/${servico.id}/`, { method: 'PATCH', body: { recursos } })
+      }
+
+      adicionarProfessorLocal({
+        ...resposta,
+        nome: resposta.nome || nome,
+        bio: resposta.bio || bio,
+        capacidade: resposta.capacidade ?? capacidade,
+        ativo: resposta.ativo ?? ativo,
+        foto: resposta.foto || fotoAtual,
+        servicos: servicosSelecionados,
+      })
+      navigate('/admin/professores')
+    } catch (e) {
+      setErro(e.status ? mensagemDeErro(e) : e.message || 'Não foi possível salvar o professor.')
+      setErros(e.dados ?? {})
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -93,32 +131,25 @@ function Formulario({ inicial, id }) {
               <Campo label="Capacidade (alunos ao mesmo tempo)" erro={erros.capacidade}>
                 <Form.Control type="number" min={1} value={capacidade} onChange={e => setCapacidade(e.target.value)} isInvalid={!!erros.capacidade} required />
               </Campo>
-              <Campo label="Valor da hora (R$)" erro={erros.valor_hora || erros.valorHora || erros.valor}>
-                <Form.Control
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={valorHora}
-                  onChange={e => setValorHora(e.target.value)}
-                  isInvalid={!!(erros.valor_hora || erros.valorHora || erros.valor)}
-                  required
-                />
-              </Campo>
               <Campo label="Foto" erro={erros.foto}>
                 <Form.Control type="file" accept="image/*" onChange={e => setFoto(e.target.files[0])} isInvalid={!!erros.foto} />
               </Campo>
-              <Campo label="Matérias que ministra" erro={erros.materias}>
-                {MATERIAS.map(materia => (
+              <Campo label="Disciplinas que ministra" erro={erros.servicos}>
+                {servicos.map(servico => (
                   <Form.Check
-                    key={materia.id}
+                    key={servico.id}
                     type="checkbox"
-                    id={`materia-${materia.id}`}
-                    label={materia.nome}
-                    checked={materias.includes(materia.id)}
-                    onChange={() => alternarMateria(materia.id)}
+                    id={`servico-${servico.id}`}
+                    label={servico.nome}
+                    checked={servicosSelecionados.includes(Number(servico.id))}
+                    onChange={() => alternarServico(servico.id)}
                   />
                 ))}
+                {!servicos.length && <div className="text-secondary">Cadastre as disciplinas primeiro.</div>}
               </Campo>
+              <Alert variant="info" className="py-2">
+                O preço é cadastrado por disciplina, na tela de serviços. A API não possui valor por hora no cadastro do professor.
+              </Alert>
               <Form.Check
                 type="switch"
                 id="ativo"
@@ -151,7 +182,13 @@ function Formulario({ inicial, id }) {
 export function ProfessorForm() {
   const { id } = useParams()
   const { dados, carregando, erro, recarregar } = useCarregar(
-    () => (id ? api(`/recursos/${id}/`) : Promise.resolve({})),
+    async () => {
+      const [professor, servicos] = await Promise.all([
+        id ? api(`/recursos/${id}/`) : Promise.resolve({}),
+        listarTudo('/servicos/'),
+      ])
+      return { professor, servicos }
+    },
     [id],
   )
 
@@ -159,7 +196,7 @@ export function ProfessorForm() {
     <>
       <h2 className="mb-4">{id ? 'Editar professor' : 'Novo professor'}</h2>
       <Estado carregando={carregando} erro={erro} recarregar={recarregar}>
-        {dados && <Formulario key={id ?? 'novo'} inicial={dados} id={id} />}
+        {dados && <Formulario key={id ?? 'novo'} inicial={dados.professor} id={id} servicos={dados.servicos} />}
       </Estado>
     </>
   )

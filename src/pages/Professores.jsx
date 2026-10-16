@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Alert, Badge, Button, Card, Col, ListGroup, Row } from 'react-bootstrap'
+import { listarTudo } from '../api/admin.js'
 import { Foto } from '../components/Foto'
-import { nomesDasMaterias } from '../data/materias'
-import { carregarProfessoresAtivos } from '../data/professores'
+import { servicosDoProfessor } from '../data/materias'
 
 export function Professores() {
   const [professores, setProfessores] = useState([])
+  const [servicos, setServicos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
 
   useEffect(() => {
     let ativo = true
 
-    carregarProfessoresAtivos()
-      .then(lista => {
-        if (ativo) {
-          setProfessores(Array.isArray(lista) ? lista : [])
-          setErro('')
-        }
+    Promise.all([listarTudo('/recursos/?ativo=true'), listarTudo('/servicos/?ativo=true')])
+      .then(([listaProfessores, listaServicos]) => {
+        if (!ativo) return
+        setProfessores(listaProfessores)
+        setServicos(listaServicos)
+        setErro('')
       })
       .catch(() => {
         if (ativo) setErro('Não foi possível carregar os professores.')
@@ -43,11 +44,11 @@ export function Professores() {
   return (
     <Row className="g-4">
       <Col md={12}>
-        <h2 className="mb-4">Professores e matérias</h2>
+        <h2 className="mb-4">Professores e disciplinas</h2>
       </Col>
 
       {professores.length ? professores.map((professor) => {
-        const materias = nomesDasMaterias(professor.materias ?? professor.servicos ?? [])
+        const disciplinas = servicosDoProfessor(professor, servicos)
 
         return (
           <Col lg={6} key={professor.id}>
@@ -58,11 +59,11 @@ export function Professores() {
                     <Foto src={professor.foto} tamanho={56} />
                     <div>
                       <h4 className="mb-1">{professor.nome}</h4>
-                      {materias.length ? materias.map((materia, index) => (
-                        <Badge key={`${professor.id}-${materia}-${index}`} bg="primary-subtle" text="primary" className="me-1 mb-1">
-                          {materia}
+                      {disciplinas.length ? disciplinas.map((servico) => (
+                        <Badge key={`${professor.id}-${servico.id}`} bg="primary-subtle" text="primary" className="me-1 mb-1">
+                          {servico.nome}
                         </Badge>
-                      )) : <Badge bg="secondary-subtle" text="secondary">Sem matéria</Badge>}
+                      )) : <Badge bg="secondary-subtle" text="secondary">Sem disciplina</Badge>}
                     </div>
                   </div>
                 </div>
