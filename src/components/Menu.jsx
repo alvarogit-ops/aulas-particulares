@@ -25,6 +25,7 @@ export function Menu() {
               <NavDropdown title="Cadastros" id="menu-cadastros">
                 <NavDropdown.Item as={NavLink} to="/admin/negocio">Negócio</NavDropdown.Item>
                 <NavDropdown.Item as={NavLink} to="/admin/professores">Professores</NavDropdown.Item>
+                <NavDropdown.Item as={NavLink} to="/admin/servicos">Disciplinas</NavDropdown.Item>
               </NavDropdown>
               <Nav.Link as={NavLink} to="/admin/avaliacoes">Avaliações</Nav.Link>
             </Nav>

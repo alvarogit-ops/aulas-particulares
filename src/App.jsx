@@ -20,6 +20,8 @@ import { Horarios } from './pages/admin/Horarios'
 import { Negocio } from './pages/admin/Negocio'
 import { ProfessorForm } from './pages/admin/ProfessorForm'
 import { Professores as ProfessoresAdmin } from './pages/admin/Professores'
+import { Servicos } from './pages/admin/Servicos'
+import { ServicoForm } from './pages/admin/ServicoForm'
 
 function App() {
   return (
@@ -50,6 +52,9 @@ function App() {
               <Route path="/admin/professores/novo" element={<ProfessorForm />} />
               <Route path="/admin/professores/:id" element={<ProfessorForm />} />
               <Route path="/admin/professores/:id/horarios" element={<Horarios />} />
+              <Route path="/admin/servicos" element={<Servicos />} />
+              <Route path="/admin/servicos/novo" element={<ServicoForm />} />
+              <Route path="/admin/servicos/:id" element={<ServicoForm />} />
               <Route path="/admin/avaliacoes" element={<Avaliacoes />} />
             </Route>
           </Route>
