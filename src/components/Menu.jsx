@@ -8,13 +8,13 @@ export function Menu() {
   const organizacao = usuario.organizacao
 
   return (
-    <Navbar expand="lg" className="bg-body-tertiary">
+    <Navbar expand="lg" className="main-navbar sticky-top">
       <Container>
-        <Navbar.Brand as={Link} to={inicio}>
+        <Navbar.Brand as={Link} to={inicio} className="fw-bold d-flex align-items-center gap-2">
           {organizacao.logo
-            ? <Image src={organizacao.logo} height={30} className="me-2" />
-            : <i className="bi bi-mortarboard me-2"></i>}
-          {organizacao.nome}
+            ? <Image src={organizacao.logo} height={30} className="me-2 rounded-circle border border-2 border-light shadow-sm" />
+            : <i className="bi bi-mortarboard me-2 fs-4 text-primary"></i>}
+          <span>{organizacao.nome}</span>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="menu" />
         <Navbar.Collapse id="menu">
@@ -39,8 +39,8 @@ export function Menu() {
             </Nav>
           )}
           <Nav>
-            <Nav.Link as={NavLink} to="/perfil">
-              <Foto src={usuario.foto} tamanho={24} /> {usuario.nome}
+            <Nav.Link as={NavLink} to="/perfil" className="d-flex align-items-center gap-2 rounded-pill px-3">
+              <Foto src={usuario.foto} tamanho={24} /> <span>{usuario.nome}</span>
             </Nav.Link>
           </Nav>
         </Navbar.Collapse>

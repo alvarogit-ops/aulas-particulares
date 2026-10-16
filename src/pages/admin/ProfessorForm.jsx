@@ -22,6 +22,7 @@ function Formulario({ inicial, id }) {
         ? inicial.servicos.map(item => typeof item === 'object' ? item.id ?? item.slug : item)
         : []
   )
+  const [valorHora, setValorHora] = useState(inicial.valor_hora ?? inicial.valorHora ?? inicial.valor ?? inicial.preco ?? 0)
   const [foto, setFoto] = useState(null)
   const [fotoAtual, setFotoAtual] = useState(inicial.foto ?? null)
   const [erro, setErro] = useState(null)
@@ -40,6 +41,8 @@ function Formulario({ inicial, id }) {
           nome: resposta.nome || nome,
           bio: resposta.bio || bio,
           capacidade: resposta.capacidade ?? capacidade,
+          valor_hora: resposta.valor_hora ?? resposta.valorHora ?? resposta.valor ?? resposta.preco ?? valorHora,
+          valorHora: resposta.valor_hora ?? resposta.valorHora ?? resposta.valor ?? resposta.preco ?? valorHora,
           ativo: resposta.ativo ?? ativo,
           foto: resposta.foto || fotoAtual,
           materias: materias.length ? materias : (resposta.materias ?? []),
@@ -64,6 +67,7 @@ function Formulario({ inicial, id }) {
     formulario.append('nome', nome)
     formulario.append('bio', bio)
     formulario.append('capacidade', capacidade)
+    formulario.append('valor_hora', Number(valorHora) || 0)
     formulario.append('ativo', String(ativo))
     materias.forEach(materiaId => formulario.append('materias', materiaId))
     if (foto) formulario.append('foto', foto)
@@ -88,6 +92,17 @@ function Formulario({ inicial, id }) {
               </Campo>
               <Campo label="Capacidade (alunos ao mesmo tempo)" erro={erros.capacidade}>
                 <Form.Control type="number" min={1} value={capacidade} onChange={e => setCapacidade(e.target.value)} isInvalid={!!erros.capacidade} required />
+              </Campo>
+              <Campo label="Valor da hora (R$)" erro={erros.valor_hora || erros.valorHora || erros.valor}>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={valorHora}
+                  onChange={e => setValorHora(e.target.value)}
+                  isInvalid={!!(erros.valor_hora || erros.valorHora || erros.valor)}
+                  required
+                />
               </Campo>
               <Campo label="Foto" erro={erros.foto}>
                 <Form.Control type="file" accept="image/*" onChange={e => setFoto(e.target.files[0])} isInvalid={!!erros.foto} />

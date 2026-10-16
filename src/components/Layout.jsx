@@ -17,9 +17,11 @@ export function Layout() {
   return (
     <>
       <Menu />
-      <Container className="my-4">
-        <Outlet />
-      </Container>
+      <div className="app-shell">
+        <Container className="my-4 app-content">
+          <Outlet />
+        </Container>
+      </div>
     </>
   )
 }

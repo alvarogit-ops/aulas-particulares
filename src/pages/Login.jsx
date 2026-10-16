@@ -25,7 +25,10 @@ export function Login() {
 
   return (
     <>
-      <h2 className="mb-4">Entrar</h2>
+      <div className="mb-4 text-center">
+        <h2 className="mb-1">Entrar</h2>
+        <p className="text-soft mb-0">Acesse sua conta</p>
+      </div>
       {erro && <Alert variant="danger">{erro}</Alert>}
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="email">
@@ -38,7 +41,7 @@ export function Login() {
         </Form.Group>
         <Button type="submit" className="w-100" disabled={enviando}>Entrar</Button>
       </Form>
-      <div className="d-flex justify-content-between mt-3">
+      <div className="d-flex justify-content-between mt-3 gap-2 flex-wrap">
         <Link to="/cadastro">Criar conta</Link>
         <Link to="/esqueci-senha">Esqueci minha senha</Link>
       </div>

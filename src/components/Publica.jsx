@@ -14,16 +14,18 @@ export function Publica() {
   }
 
   return (
-    <Container className="my-5">
-      <Row className="justify-content-center">
-        <Col md={6} lg={5}>
-          <Card className="shadow-sm">
-            <Card.Body className="p-4">
-              <Outlet />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+    <div className="auth-shell">
+      <Container>
+        <Row className="justify-content-center">
+          <Col md={6} lg={5}>
+            <Card className="auth-card">
+              <Card.Body className="p-4 p-lg-5">
+                <Outlet />
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   )
 }

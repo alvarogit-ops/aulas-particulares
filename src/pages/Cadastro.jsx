@@ -30,7 +30,10 @@ export function Cadastro() {
 
   return (
     <>
-      <h2 className="mb-4">Criar conta</h2>
+      <div className="mb-4 text-center">
+        <h2 className="mb-1">Criar conta</h2>
+        <p className="text-soft mb-0">Comece agora mesmo</p>
+      </div>
       {erro && <Alert variant="danger">{erro}</Alert>}
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="nome">
@@ -50,7 +53,7 @@ export function Cadastro() {
         </Form.Group>
         <Button type="submit" className="w-100" disabled={enviando}>Criar conta</Button>
       </Form>
-      <p className="mt-3 mb-0">
+      <p className="mt-3 mb-0 text-center">
         Já tem conta? <Link to="/login">Entrar</Link>
       </p>
     </>

@@ -64,6 +64,17 @@ export function Agendar() {
     }
   }, [professor, form.materia])
 
+  const valorHora = Number(professor?.valor_hora ?? professor?.valorHora ?? professor?.valor ?? professor?.preco ?? 0)
+
+  const multiplicadorDuracao = useMemo(() => {
+    const valor = String(form.duracao)
+    if (valor === '1h30') return 1.5
+    if (valor === '2h') return 2
+    return 1
+  }, [form.duracao])
+
+  const custoEstimado = useMemo(() => valorHora * multiplicadorDuracao, [valorHora, multiplicadorDuracao])
+
   function atualizarCampo(campo, valor) {
     setForm(prev => ({ ...prev, [campo]: valor }))
   }
@@ -78,11 +89,13 @@ export function Agendar() {
       return
     }
 
+    const valorTotal = Number((valorHora * multiplicadorDuracao).toFixed(2))
     const reserva = {
       ...form,
       professor: professor?.nome ?? 'Professor',
       materia: form.materia || nomesDasMaterias(professor?.materias ?? professor?.servicos ?? [])[0] || '',
-      valor: professor?.valor ?? 0,
+      valor: valorTotal,
+      custoEstimado: valorTotal,
       status: 'Agendada',
       codigo: `AULA-${Date.now().toString().slice(-6)}`
     }
@@ -217,7 +230,7 @@ export function Agendar() {
 
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <strong>Total estimado:</strong> R$ {Number(professor?.preco ?? 0).toFixed(2)}
+                  <strong>Total estimado:</strong> R$ {custoEstimado.toFixed(2)}
                 </div>
                 <Button type="submit" size="lg">Confirmar reserva</Button>
               </div>
